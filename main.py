@@ -15,11 +15,15 @@ rows = 10
 
 row_width = 10
 
-count_time = 5
+disappear_time = 5
 
 timer_r = None
 
-last_key_press_time = None
+another_program_running = False
+
+stop_program = None
+
+game_over = False
 
 # ---------------------------- Exit window ------------------------------- #
 def exit_fullscreen(event):
@@ -30,39 +34,47 @@ def exit_fullscreen(event):
 def write(event):
     global text
     global rows
-    global last_key_press_time
-    # Pobierz znak wpisany na klawiaturze
-    pressed_key = event.char
+    global another_program_running
+    global stop_program
 
-    last_key_press_time = time.time()
-    text_disappear()
-    # Wyświetlenie tekstu
-    text = text + pressed_key
+    if not game_over:
+        # Pobierz znak wpisany na klawiaturze
+        pressed_key = event.char
 
-    chunk_size = row_width
-    chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+        stop_program = False
+        if another_program_running:
+            stop_program = True
+        text_disappear(disappear_time)
 
-    for i in range(1, rows + 1):
-        if len(chunks) <= rows:
-            if i <= len(chunks):
-                exec(f'written_text_label_{i}.config(text="{chunks[i - 1]}")')
-        else:
-            exec(f'written_text_label_{i}.config(text="{chunks[len(chunks) - rows + i - 1]}")')
+        # Wyświetlenie tekstu
+        text = text + pressed_key
+
+        chunk_size = row_width
+        chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+        for i in range(1, rows + 1):
+            if len(chunks) <= rows:
+                if i <= len(chunks):
+                    exec(f'written_text_label_{i}.config(text="{chunks[i - 1]}")')
+            else:
+                exec(f'written_text_label_{i}.config(text="{chunks[len(chunks) - rows + i - 1]}")')
 
 
 # --------------------- DISAPPEARING MECHANISM ------------------------ #
-def text_disappear():
-    global timer_r
-    global last_key_press_time
+def text_disappear(count_time):
+    another_program_running = True
 
-    for i in range(3, 5):
-        if time.time() - last_key_press_time >= i:
-            for j in range(1, rows + 1):
-                exec(f'written_text_label_{j}.configure(style="Font_{i}.TLabel")')
-    if count_time <= 0:
-        return
+    #Zostawiłem to, kłopot z obsługą czasu
+    if not stop_program:
+        for i in range(2, -1, -1):
+            if count_time == i:
+                for j in range(1, rows + 1):
+                    exec(f'written_text_label_{j}.configure(style="Font_{i}.TLabel")')
+        if count_time == 0:
+            another_program_running = False
+            game_over = True
 
-    timer_r = window.after(1000, text_disappear)
+        timer_r = window.after(1000, text_disappear, count_time - 1)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
